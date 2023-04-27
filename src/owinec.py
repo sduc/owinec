@@ -44,19 +44,19 @@ class SoapHandler(BaseHTTPRequestHandler):
         return super().parse_request()
 
     def do_GET(self):
-        logger.debug(f'GET {self.path} from {self.address_string()}, invalid method')
+        logger.info(f'GET {self.path} from {self.address_string()}, invalid method')
         self.send_response(HTTPStatus(HTTPStatus.METHOD_NOT_ALLOWED))
         self.end_headers()
         self.wfile.write(b'Method Not Allowed')
 
     def do_PUT(self):
-        logger.debug(f'PUT {self.path} from {self.address_string()}, invalid method')
+        logger.info(f'PUT {self.path} from {self.address_string()}, invalid method')
         self.send_response(HTTPStatus(HTTPStatus.METHOD_NOT_ALLOWED))
         self.end_headers()
         self.wfile.write(b'Method Not Allowed')
 
     def do_POST(self):
-        logger.debug(f'POST {self.path} from {self.address_string()}')
+        logger.info(f'POST {self.path} from {self.address_string()}')
 
         if isinstance(self.connection, ssl.SSLSocket):
             # Certificate Authentication
@@ -94,6 +94,8 @@ class SoapHandler(BaseHTTPRequestHandler):
         else:
             text = payload.decode('utf8')
 
+        logger.info(f"input data {text}")
+
         envelope = wsman.Envelope.load(ET.fromstring(text))
         logger.debug(f'Action={envelope.action}, ResourceURI={envelope.resource_uri}')
         for error in envelope.errors:
@@ -123,6 +125,7 @@ class SoapHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'Not Implemented')
             return
 
+        logger.info(f"output data: {response}")
         response = response.encode('utf8')
         logger.info(f'{self.path} - {envelope.action}/{envelope.resource_uri}')
         self.send_response(HTTPStatus(HTTPStatus.OK))
@@ -155,7 +158,7 @@ class WSManHandler(SoapHandler):
             'subscription2', 'Test Subscription 2', 'https://10.0.1.170:5986/owinec/subscriptions/s2',
             [('Security', '*[System[(Level=1 or Level=2 or Level=3 or Level=4 or Level=0 or Level=5)]]'),
              ('System', '*[System[(Level=1 or Level=2 or Level=3 or Level=4 or Level=0 or Level=5)]]')],
-            ['4ab167dfcbbda8d6225889b05937112062ea1152']
+            ['663FC825E1657B6361DB624E549EF8EA839684A0'] # Replace by CA thumbprint
         )
         subscription.bookmarks = False
         subscription.read_existing_events = True
