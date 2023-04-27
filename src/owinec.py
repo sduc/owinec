@@ -30,8 +30,9 @@ import xml.etree.ElementTree as ET
 WSMAN_PORT_HTTP = 5985
 WSMAN_PORT_HTTPS = 5986
 
-ctx = ssl.create_default_context()
-ctx.check_hostname = True
+ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+# ctx = ssl.create_default_context()
+ctx.check_hostname = False
 ctx.load_cert_chain('/root/server-cert.pem', '/root/server-key.pem')
 
 
