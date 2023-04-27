@@ -36,6 +36,21 @@ ctx.check_hostname = False
 ctx.load_cert_chain('/root/server-cert.pem', '/root/server-key.pem')
 
 
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+def setup_logger(name, log_file, level=logging.INFO):
+    """To setup as many loggers as you want"""
+
+    handler = logging.FileHandler(log_file)        
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+event_logger = setup_logger("event-logger", "event.log")
+
 class SoapHandler(BaseHTTPRequestHandler):
     server_version = 'owinec/1.0'
 
@@ -178,7 +193,8 @@ class WSManHandler(SoapHandler):
 
     def do_events(self, envelope: wsman.EventsEnvelope) -> str:
         for e in envelope.events:
-            print(e.encode('utf8'))
+            event_logger.info(e.encode('utf8'))
+            # print(e.encode('utf8'))
         response = wsman.AckEnvelope(envelope.id, envelope.operation_id)
         return response.dump()
 
