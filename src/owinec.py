@@ -18,7 +18,7 @@
 
 import argparse
 from http import HTTPStatus
-from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ssl
 import ipaddress
 import logging
@@ -30,7 +30,7 @@ import xml.etree.ElementTree as ET
 WSMAN_PORT_HTTP = 5985
 WSMAN_PORT_HTTPS = 5986
 
-ctx = ssl.create_default_context(ssl.PROTOCOL_TLS_SERVER)
+ctx = ssl.create_default_context()
 ctx.check_hostname = True
 ctx.load_cert_chain('/root/server-cert.pem', '/root/server-key.pem')
 
@@ -179,10 +179,6 @@ class WSManHandler(SoapHandler):
         return response.dump()
 
 
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-    pass
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='owinec - Open Windows Event Collector')
     parser.add_argument('-p', '--protocol', type=str, default='https', choices=['http', 'https'],
@@ -225,8 +221,6 @@ if __name__ == '__main__':
             if not args.cert or not args.key:
                 raise FileNotFoundError('certificate and private key have to be specified when using https')
             httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True, server_hostname="10.0.1.170")
-            ssl.wrap_socket(httpd.socket, server_side=True,
-                                           certfile=args.cert.name, keyfile=args.key.name)
         else:
             # TODO implement http client handling
             logger.critical('Http is not supported and not secure - use https instead')
