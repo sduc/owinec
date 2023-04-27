@@ -224,7 +224,7 @@ if __name__ == '__main__':
         if args.protocol == 'https':
             if not args.cert or not args.key:
                 raise FileNotFoundError('certificate and private key have to be specified when using https')
-            httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True, server_hostname="10.0.1.170")
+            httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
         else:
             # TODO implement http client handling
             logger.critical('Http is not supported and not secure - use https instead')
