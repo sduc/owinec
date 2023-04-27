@@ -18,7 +18,7 @@
 
 import argparse
 from http import HTTPStatus
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
 import ssl
 import ipaddress
 import logging
@@ -29,6 +29,10 @@ import xml.etree.ElementTree as ET
 
 WSMAN_PORT_HTTP = 5985
 WSMAN_PORT_HTTPS = 5986
+
+ctx = ssl.create_default_context(ssl.PROTOCOL_TLS_SERVER)
+ctx.check_hostname = True
+ctx.load_cert_chain('/root/server-cert.pem', '/root/server-key.pem')
 
 
 class SoapHandler(BaseHTTPRequestHandler):
@@ -147,7 +151,7 @@ class SoapHandler(BaseHTTPRequestHandler):
 class WSManHandler(SoapHandler):
     def do_enumerate(self, envelope: wsman.EnumerateSubscriptionEnvelope) -> str:
         subscription = wsman.SubscriptionEnvelope(
-            'subscription2', 'Test Subscription 2', 'https://chakotay:5986/owinec/subscriptions/s2',
+            'subscription2', 'Test Subscription 2', 'https://10.0.1.170:5986/owinec/subscriptions/s2',
             [('Security', '*[System[(Level=1 or Level=2 or Level=3 or Level=4 or Level=0 or Level=5)]]'),
              ('System', '*[System[(Level=1 or Level=2 or Level=3 or Level=4 or Level=0 or Level=5)]]')],
             ['4ab167dfcbbda8d6225889b05937112062ea1152']
@@ -215,12 +219,13 @@ if __name__ == '__main__':
         bind_address = str(args.listen_address)
         bind_port = args.port or WSMAN_PORT_HTTP if args.protocol == 'http' else WSMAN_PORT_HTTPS
 
-        httpd = ThreadedHTTPServer((bind_address, bind_port), WSManHandler)
+        httpd = ThreadingHTTPServer((bind_address, bind_port), WSManHandler)
 
         if args.protocol == 'https':
             if not args.cert or not args.key:
                 raise FileNotFoundError('certificate and private key have to be specified when using https')
-            httpd.socket = ssl.wrap_socket(httpd.socket, server_side=True,
+            httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True, server_hostname="10.0.1.170")
+            ssl.wrap_socket(httpd.socket, server_side=True,
                                            certfile=args.cert.name, keyfile=args.key.name)
         else:
             # TODO implement http client handling
